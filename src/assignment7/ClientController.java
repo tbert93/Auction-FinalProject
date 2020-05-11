@@ -17,6 +17,7 @@ public class ClientController {
     public final static int FILE_SIZE = 6022386;
     public final static String USERNAME = "Client 1";
     public final static String PASSWORD = "1234";
+    public BidData bd;
     //public static Socket socket;
 
     @FXML
@@ -37,9 +38,12 @@ public class ClientController {
     void initialize() throws IOException {
         //socket = new Socket(HOST,PORT);
         //download database from server
-        getFile(DATABASE);
+        //getFile(DATABASE);
+        getBidData();
+        createDataBase();
         //download justItems from server
-        getFile(JUST_ITEMS);
+        //getFile(JUST_ITEMS);
+        createJustItems();
         //output database to GUI
         updateAuctionList();
         //update dropdown menu with items
@@ -69,16 +73,13 @@ public class ClientController {
 
             //create a BidData object and receive from server
             System.out.println("Receiving Bid Data");
-            BidData bd = (BidData)fromServer.readObject();
+            bd = (BidData)fromServer.readObject();
             System.out.println("Bid Data Received");
             System.out.println(bd.getItems().size());
 
-            for(int j = 0; j < bd.getItems().size(); j++){
-                System.out.println(bd.getItems().get(j).getItemName());
-                System.out.println(bd.getItems().get(j).getItemDescription());
-                System.out.println(bd.getItems().get(j).getItemPrice());
-                System.out.println(bd.getItems().get(j).getUsername());
-            }
+            createDataBase();
+            updateAuctionList();
+
 
 
 
@@ -91,7 +92,7 @@ public class ClientController {
     }
     @FXML
     void refreshList(MouseEvent event) throws IOException {
-        getFile(DATABASE);
+        getBidData();
         updateAuctionList();
 
     }
@@ -186,6 +187,78 @@ public class ClientController {
 
         }
         return null;
+    }
+
+    public void getBidData(){
+        try{
+            //establish connection with server
+            Socket socket = new Socket(HOST,PORT);
+            //create an output stream to server
+            ObjectOutputStream toServer = new ObjectOutputStream(socket.getOutputStream());
+            //create an input stream from server
+            ObjectInputStream fromServer = new ObjectInputStream(socket.getInputStream());
+
+            //create an Item object and send to the server
+            Item i = null;
+            toServer.reset();
+            System.out.println("Sending Item object");
+            toServer.writeObject(i);
+            System.out.println("Item sent");
+
+            //create a BidData object and receive from server
+            System.out.println("Receiving Bid Data");
+            bd = (BidData)fromServer.readObject();
+            System.out.println("Bid Data Received");
+            System.out.println(bd.getItems().size());
+
+            for(int j = 0; j < bd.getItems().size(); j++){
+                System.out.println(bd.getItems().get(j).getItemName());
+                System.out.println(bd.getItems().get(j).getItemDescription());
+                System.out.println(bd.getItems().get(j).getItemPrice());
+                System.out.println(bd.getItems().get(j).getUsername());
+            }
+
+
+
+        }
+
+        catch (IOException | ClassNotFoundException ex){
+            ex.printStackTrace();
+        }
+    }
+
+    public void createJustItems() throws IOException {
+        FileWriter writer = new FileWriter(JUST_ITEMS,false);
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+
+        for(int i = 0; i < bd.getItems().size(); i++) {
+            String s = bd.getItems().get(i).getItemName();
+            bufferedWriter.write(s);
+            bufferedWriter.newLine();
+        }
+
+        bufferedWriter.close();
+    }
+
+    public void createDataBase() throws IOException {
+        FileWriter writer = new FileWriter(DATABASE,false);
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+        for(int i = 0; i < bd.getItems().size(); i++){
+            bufferedWriter.write((i+1) + ".");
+            bufferedWriter.newLine();
+            bufferedWriter.write("Name: " + bd.getItems().get(i).getItemName());
+            bufferedWriter.newLine();
+            bufferedWriter.write("Description: " + bd.getItems().get(i).getItemDescription());
+            bufferedWriter.newLine();
+            if(!bd.getItems().get(i).isSold())
+                bufferedWriter.write("Price: " + bd.getItems().get(i).getItemPrice());
+            else
+                bufferedWriter.write("SOLD to " + bd.getItems().get(i).getUsername());
+            bufferedWriter.newLine();
+        }
+        bufferedWriter.close();
     }
 
 }
