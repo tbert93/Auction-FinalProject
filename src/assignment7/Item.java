@@ -2,6 +2,8 @@ package assignment7;
 
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Item implements Serializable {
     private String itemName;
@@ -10,12 +12,12 @@ public class Item implements Serializable {
     private Boolean sold;
     private String username;
     private static final long serialVersionUID = 1234L;
-
     Item(String name, String description, Double price){//constructed only from server side
         setItemName(name);
         setItemDescription(description);
         setItemPrice(price);
         sold = false;
+
     }
 
     Item(String name, String description, Double price, String client){ //constructed only from client side

@@ -17,11 +17,14 @@ public class ClientController {
     public final static int FILE_SIZE = 6022386;
     public final static String USERNAME = "Client 1";
     public final static String PASSWORD = "1234";
+    //public static Socket socket;
 
     @FXML
     private TextArea itemList;
     @FXML
     private Button bidButton;
+    @FXML
+    private Button  refreshButton;
     @FXML
     private ChoiceBox<String> dropDown;
     @FXML
@@ -32,6 +35,7 @@ public class ClientController {
     //initializes upon startup
     @FXML
     void initialize() throws IOException {
+        //socket = new Socket(HOST,PORT);
         //download database from server
         getFile(DATABASE);
         //download justItems from server
@@ -40,7 +44,6 @@ public class ClientController {
         updateAuctionList();
         //update dropdown menu with items
         updateDropDown();
-
     }
 
     @FXML
@@ -50,6 +53,8 @@ public class ClientController {
             Socket socket = new Socket(HOST,PORT);
             //create an output stream to server
             ObjectOutputStream toServer = new ObjectOutputStream(socket.getOutputStream());
+            //create an input stream from server
+            ObjectInputStream fromServer = new ObjectInputStream(socket.getInputStream());
 
             Double value = slider.getValue();
             String item = dropDown.getValue();
@@ -57,11 +62,38 @@ public class ClientController {
 
             //create an Item object and send to the server
             Item i = new Item(item,description,value,USERNAME);
+            toServer.reset();
+            System.out.println("Sending Item object");
             toServer.writeObject(i);
+            System.out.println("Item sent");
+
+            //create a BidData object and receive from server
+            System.out.println("Receiving Bid Data");
+            BidData bd = (BidData)fromServer.readObject();
+            System.out.println("Bid Data Received");
+            System.out.println(bd.getItems().size());
+
+            for(int j = 0; j < bd.getItems().size(); j++){
+                System.out.println(bd.getItems().get(j).getItemName());
+                System.out.println(bd.getItems().get(j).getItemDescription());
+                System.out.println(bd.getItems().get(j).getItemPrice());
+                System.out.println(bd.getItems().get(j).getUsername());
+            }
+
+
+
         }
-        catch (IOException ex){
+
+        catch (IOException | ClassNotFoundException ex){
             ex.printStackTrace();
         }
+
+    }
+    @FXML
+    void refreshList(MouseEvent event) throws IOException {
+        getFile(DATABASE);
+        updateAuctionList();
+
     }
 
     @FXML
@@ -145,10 +177,11 @@ public class ClientController {
 
         while(sc.hasNextLine()){
             String s = sc.nextLine();
-            if(s.equals(item)){
-                s = sc.nextLine();
-                return s.substring(13);
-
+            if(s.length() > 5) {
+                if (s.substring(6).equals(item)) {
+                    s = sc.nextLine();
+                    return s.substring(13);
+                }
             }
 
         }
