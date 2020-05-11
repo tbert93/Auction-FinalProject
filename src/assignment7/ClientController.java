@@ -23,6 +23,8 @@ public class ClientController {
     @FXML
     private TextArea itemList;
     @FXML
+    private TextArea messageText;
+    @FXML
     private Button bidButton;
     @FXML
     private Button  refreshButton;
@@ -63,9 +65,10 @@ public class ClientController {
             Double value = slider.getValue();
             String item = dropDown.getValue();
             String description = findDescription(item);
+            Double buyNowPrice = findBuyNowPrice(item);
 
             //create an Item object and send to the server
-            Item i = new Item(item,description,value,USERNAME);
+            Item i = new Item(item,description,buyNowPrice,value,USERNAME);
             toServer.reset();
             System.out.println("Sending Item object");
             toServer.writeObject(i);
@@ -79,6 +82,7 @@ public class ClientController {
 
             createDataBase();
             updateAuctionList();
+            updateMessage();
 
 
 
@@ -153,10 +157,16 @@ public class ClientController {
             String name = sc.nextLine();
             String description = sc.nextLine();
             String price = sc.nextLine();
-            itemList.setText(s + number + "\n" + name + "\n" + description + "\n" + price + "\n");
+            String bid = sc.nextLine();
+            itemList.setText(s + number + "\n" + name + "\n" + description + "\n" + price + "\n" + bid + "\n");
         }
 
 
+    }
+
+    public void updateMessage(){
+        String s = messageText.getText();
+        messageText.setText(s + bd.getMessage() + "\n");
     }
 
     public void updateDropDown() throws FileNotFoundException {
@@ -186,6 +196,16 @@ public class ClientController {
             }
 
         }
+        return null;
+    }
+
+    public Double findBuyNowPrice(String item) throws FileNotFoundException {
+
+        for(int i = 0; i < bd.getItems().size(); i++){
+            if(bd.getItems().get(i).getItemName().equals(item))
+                return bd.getItems().get(i).getItemPrice();
+        }
+
         return null;
     }
 
@@ -253,10 +273,18 @@ public class ClientController {
             bufferedWriter.write("Description: " + bd.getItems().get(i).getItemDescription());
             bufferedWriter.newLine();
             if(!bd.getItems().get(i).isSold())
-                bufferedWriter.write("Price: " + bd.getItems().get(i).getItemPrice());
+                bufferedWriter.write("BuyNow Price: " + bd.getItems().get(i).getItemPrice());
             else
                 bufferedWriter.write("SOLD to " + bd.getItems().get(i).getUsername());
             bufferedWriter.newLine();
+            if(!bd.getItems().get(i).isSold()) {
+                bufferedWriter.write("Current Bid: " + bd.getItems().get(i).getBidPrice());
+                if(bd.getItems().get(i).getUsername() != null)
+                    bufferedWriter.write(" held by " + bd.getItems().get(i).getUsername());
+            }else
+                bufferedWriter.write(" ");
+            bufferedWriter.newLine();
+
         }
         bufferedWriter.close();
     }

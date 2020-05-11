@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class BidData implements Serializable {
     private ArrayList<Item> items = new ArrayList<>();
     private ArrayList<Item> itemsToBeProcessed = new ArrayList<>();
+    private String message;
     private static final long serialVersionUID = 1L;
     BidData(){
 
@@ -19,11 +20,19 @@ public class BidData implements Serializable {
         itemsToBeProcessed.add(i);
     }
 
+    void setMessage(String m){
+        message = m;
+    }
+
     ArrayList<Item> getItems(){
         return items;
     }
 
     ArrayList<Item> getItemsToBeProcessed(){
         return itemsToBeProcessed;
+    }
+
+    String getMessage(){
+        return message;
     }
 }

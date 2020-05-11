@@ -2,30 +2,31 @@ package assignment7;
 
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Item implements Serializable {
     private String itemName;
     private String itemDescription;
-    private Double itemPrice = 1.00;
+    private Double buyNowPrice;
+    private Double bidPrice;
     private Boolean sold;
     private String username;
     private static final long serialVersionUID = 1234L;
-    Item(String name, String description, Double price){//constructed only from server side
+
+    Item(String name, String description, Double price, Double startingPrice){//constructed only from server side
         setItemName(name);
         setItemDescription(description);
         setItemPrice(price);
+        setBidPrice(startingPrice);
         sold = false;
-
     }
 
-    Item(String name, String description, Double price, String client){ //constructed only from client side
+    Item(String name, String description, Double price, Double bid, String client){ //constructed only from client side
         setItemName(name);
         setItemDescription(description);
         setItemPrice(price);
-        Sold();
+        setBidPrice(bid);
         setUsername(client);
+        sold = false;
     }
 
     private void setItemName(String name){
@@ -37,7 +38,11 @@ public class Item implements Serializable {
     }
 
     void setItemPrice(Double price){
-        itemPrice = price;
+        buyNowPrice = price;
+    }
+
+    void setBidPrice(Double startingPrice){
+        bidPrice = startingPrice;
     }
 
     void setUsername(String client){
@@ -53,11 +58,15 @@ public class Item implements Serializable {
     }
 
     Double getItemPrice(){
-        return itemPrice;
+        return buyNowPrice;
     }
 
     String getUsername(){
         return username;
+    }
+
+    Double getBidPrice(){
+        return bidPrice;
     }
 
     boolean isSold(){
