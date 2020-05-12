@@ -12,24 +12,33 @@ public class ClientController {
 
     public final static String DATABASE = "src/assignment7/database.txt";
     public final static String JUST_ITEMS = "src/assignment7/justItems.txt";
+    //default Port, change manually here
+    //remember to change Server Port
     public final static int PORT = 4242;
+    //default Host, change manually here
     public final static String HOST = "localhost";
-    public final static int FILE_SIZE = 6022386;
-    public final static String USERNAME = "Client 1";
+    //default username
+    public static String USERNAME = "Client 1";
     public final static String PASSWORD = "1234";
+    //BidData object from Server is stored here
     public BidData bd;
-    //public static Socket socket;
 
     @FXML
     private TextArea itemList;
     @FXML
     private TextArea messageText;
     @FXML
+    private TextArea yourItemsText;
+    @FXML
     private Button bidButton;
     @FXML
     private Button  refreshButton;
     @FXML
+    private Button clearButton;
+    @FXML
     private ChoiceBox<String> dropDown;
+    @FXML
+    private ChoiceBox<String> usernameDropDown;
     @FXML
     private Slider slider;
     @FXML
@@ -38,18 +47,19 @@ public class ClientController {
     //initializes upon startup
     @FXML
     void initialize() throws IOException {
-        //socket = new Socket(HOST,PORT);
+
         //download database from server
-        //getFile(DATABASE);
         getBidData();
         createDataBase();
-        //download justItems from server
-        //getFile(JUST_ITEMS);
+        //create text file with just items
         createJustItems();
         //output database to GUI
         updateAuctionList();
         //update dropdown menu with items
         updateDropDown();
+        //username can only be chosen at startup
+        updateUsernameDropDown();
+
     }
 
     @FXML
@@ -62,7 +72,8 @@ public class ClientController {
             //create an input stream from server
             ObjectInputStream fromServer = new ObjectInputStream(socket.getInputStream());
 
-            Double value = slider.getValue();
+            //get item properties
+            Double value = Math.round(slider.getValue() * 100.0) / 100.0;
             String item = dropDown.getValue();
             String description = findDescription(item);
             Double buyNowPrice = findBuyNowPrice(item);
@@ -80,9 +91,10 @@ public class ClientController {
             System.out.println("Bid Data Received");
             System.out.println(bd.getItems().size());
 
+            //update GUI
             createDataBase();
             updateAuctionList();
-            updateMessage();
+            updateMessage(item);
 
 
 
@@ -103,45 +115,22 @@ public class ClientController {
 
     @FXML
     void showMoney(MouseEvent event){
-        int sliderValue = (int) slider.getValue();
-        sliderLabel.setText(Integer.toString(sliderValue));
+        double sliderValue = Math.round(slider.getValue() * 100.0) / 100.0;
+        sliderLabel.setText(Double.toString(sliderValue));
     }
 
-    public static void getFile(String file)throws IOException{
-        int bytesRead;
-        int current = 0;
-        FileOutputStream fileOutputStream = null;
-        BufferedOutputStream bufferedOutputStream = null;
-        Socket socket = null;
-        try {
-            socket = new Socket(HOST, PORT);
-            System.out.println("Connecting...");
+    @FXML
+    void clearMessages(MouseEvent event){
+        messageText.clear();
 
-            // receive file
-            byte [] bytes  = new byte [FILE_SIZE];
-            InputStream is = socket.getInputStream();
-            fileOutputStream = new FileOutputStream(file);
-            bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-            bytesRead = is.read(bytes,0,bytes.length);
-            current = bytesRead;
-
-            do {
-                bytesRead =
-                        is.read(bytes, current, (bytes.length-current));
-                if(bytesRead >= 0) current += bytesRead;
-            } while(bytesRead > -1);
-
-            bufferedOutputStream.write(bytes, 0 , current);
-            bufferedOutputStream.flush();
-            System.out.println("File " + file
-                    + " downloaded (" + current + " bytes read)");
-        }
-        finally {
-            if (fileOutputStream != null) fileOutputStream.close();
-            if (bufferedOutputStream != null) bufferedOutputStream.close();
-            if (socket != null) socket.close();
-        }
     }
+
+    @FXML
+    void setUsername(){
+        USERNAME = usernameDropDown.getValue();
+        usernameDropDown.setDisable(true);
+    }
+
 
     public void updateAuctionList() throws FileNotFoundException {
 
@@ -158,15 +147,22 @@ public class ClientController {
             String description = sc.nextLine();
             String price = sc.nextLine();
             String bid = sc.nextLine();
-            itemList.setText(s + number + "\n" + name + "\n" + description + "\n" + price + "\n" + bid + "\n");
+            String line = sc.nextLine();
+            itemList.setText(s + number + "\n" + name + "\n" + description + "\n" + price + "\n" + bid + "\n" + line + "\n");
         }
 
 
     }
 
-    public void updateMessage(){
+    public void updateMessage(String item){
+        //updates message after bid
         String s = messageText.getText();
         messageText.setText(s + bd.getMessage() + "\n");
+        //updates your item list
+        if(bd.getMessage().equals("Item Sold to you!")){
+            String i = yourItemsText.getText();
+            yourItemsText.setText(i + "\n" + item);
+        }
     }
 
     public void updateDropDown() throws FileNotFoundException {
@@ -179,6 +175,16 @@ public class ClientController {
             dropDown.getItems().add(s);
         }
 
+
+    }
+
+    public void updateUsernameDropDown(){
+        //Manually add clients here
+        usernameDropDown.getItems().add("Client 1");
+        usernameDropDown.getItems().add("Client 2");
+        usernameDropDown.getItems().add("Client 3");
+        usernameDropDown.getItems().add("Client 4");
+        usernameDropDown.getItems().add("Client 5");
 
     }
 
@@ -199,7 +205,7 @@ public class ClientController {
         return null;
     }
 
-    public Double findBuyNowPrice(String item) throws FileNotFoundException {
+    public Double findBuyNowPrice(String item)  {
 
         for(int i = 0; i < bd.getItems().size(); i++){
             if(bd.getItems().get(i).getItemName().equals(item))
@@ -230,16 +236,6 @@ public class ClientController {
             bd = (BidData)fromServer.readObject();
             System.out.println("Bid Data Received");
             System.out.println(bd.getItems().size());
-
-            for(int j = 0; j < bd.getItems().size(); j++){
-                System.out.println(bd.getItems().get(j).getItemName());
-                System.out.println(bd.getItems().get(j).getItemDescription());
-                System.out.println(bd.getItems().get(j).getItemPrice());
-                System.out.println(bd.getItems().get(j).getUsername());
-            }
-
-
-
         }
 
         catch (IOException | ClassNotFoundException ex){
@@ -283,6 +279,8 @@ public class ClientController {
                     bufferedWriter.write(" held by " + bd.getItems().get(i).getUsername());
             }else
                 bufferedWriter.write(" ");
+            bufferedWriter.newLine();
+            bufferedWriter.write("_______________________________________________");
             bufferedWriter.newLine();
 
         }
